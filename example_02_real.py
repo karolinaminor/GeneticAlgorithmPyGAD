@@ -13,7 +13,7 @@ SELECTED_MUTATION = "gaussian"
 
 if SELECTED_FUNC == "MCCORMICK":
     n_vars = 2 
-    func_inst = bf.McCormick(n_dimensions=n_vars)
+    func_inst = bf.McCormick()
     bounds_list = [[-1.5, 4.0], [-3.0, 4.0]] 
     global_min = func_inst.minimum().score
     def calculate_func(x):
