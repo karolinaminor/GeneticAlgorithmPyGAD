@@ -31,10 +31,7 @@ elif SELECTED_FUNC == "CEC":
     if is_matrix and len(raw_bounds) == n_vars:
         bounds_list = raw_bounds
     else:
-        if isinstance(raw_bounds, (list, tuple, numpy.ndarray)) and len(raw_bounds) == 2:
-            bounds_list = [raw_bounds] * n_vars
-        else:
-            bounds_list = [[-100, 100]] * n_vars
+        raise ValueError("Cannot determine bounds.")
 
     global_min = func_inst.f_global
     def calculate_func(x):

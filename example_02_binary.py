@@ -4,7 +4,7 @@ import numpy
 import benchmark_functions as bf
 import opfunu.cec_based.cec2014 as cec2014
 
-SELECTED_FUNC = "MCCORMICK" 
+SELECTED_FUNC = "CEC" 
 
 bits_per_variable = 20 
 
@@ -29,12 +29,7 @@ elif SELECTED_FUNC == "CEC":
     if is_matrix and len(raw_bounds) == n_vars:
         bounds_list = raw_bounds
     else:
-        if isinstance(raw_bounds, (list, tuple, numpy.ndarray)) and len(raw_bounds) == 2:
-            single_bound = (raw_bounds[0], raw_bounds[1])
-            bounds_list = [single_bound] * n_vars
-        else:
-            print(f"UWAGA: Nietypowy format bounds: {raw_bounds}. Przyjmuję domyślne [-100, 100].")
-            bounds_list = [[-100, 100]] * n_vars
+        raise ValueError("Cannot determine bounds.")
 
     global_min = func_inst.f_global
     def calculate_func(x):
