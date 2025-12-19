@@ -4,7 +4,10 @@ import numpy
 import benchmark_functions as bf
 import opfunu.cec_based.cec2014 as cec2014
 
-SELECTED_FUNC = "CEC" 
+import matplotlib
+matplotlib.use("TkAgg")
+
+SELECTED_FUNC = "CEC"
 
 bits_per_variable = 20 
 
@@ -54,7 +57,8 @@ def decode_ind(individual):
         decoded.append(val)
     return decoded
 
-def fitness_func(ga_instance, solution, solution_idx):
+
+def fitness_func(ga, solution, solution_idx):
     decoded_solution = decode_ind(solution)
     val = calculate_func(decoded_solution) 
     fitness = 1.0 / (abs(val - global_min) + 0.000001)
@@ -62,13 +66,13 @@ def fitness_func(ga_instance, solution, solution_idx):
 
 fitness_function = fitness_func
 gene_type = int
-num_generations = 100
-sol_per_pop = 80
-num_parents_mating = 50
+num_generations = 250
+sol_per_pop = 100
+num_parents_mating = 80
 init_range_low = 0
 init_range_high = 2 
 mutation_num_genes = 1
-parent_selection_type = "tournament"
+parent_selection_type = "rws"
 crossover_type = "uniform"
 mutation_type = "random"
 
@@ -96,40 +100,67 @@ def on_generation(ga_instance):
     ga_instance.logger.info("Individual (Decoded, first 2) = {solution}...".format(solution=decoded_sol[:2])) 
     ga_instance.logger.info("\r\n")
 
-
-ga_instance = pygad.GA(num_generations=num_generations,
-           sol_per_pop=sol_per_pop,
-           num_parents_mating=num_parents_mating,
-           num_genes=num_genes,
-           fitness_func=fitness_func,
-           gene_type=gene_type,
-           init_range_low=init_range_low,
-           init_range_high=init_range_high,
-           gene_space=[0, 1], 
-           mutation_num_genes=mutation_num_genes,
-           parent_selection_type=parent_selection_type,
-           crossover_type=crossover_type,
-           mutation_type=mutation_type,
-           keep_elitism=1,
-           K_tournament=3,
-           random_mutation_max_val=2, 
-           random_mutation_min_val=0,
-           logger=logger,
-           on_generation=on_generation,
-           parallel_processing=None)
-
-ga_instance.run()
+def fitness_to_true_val(solution_fitness):
+    return global_min + (1.0 / solution_fitness) - 0.000001
 
 
-best = ga_instance.best_solution()
-solution, solution_fitness, solution_idx = ga_instance.best_solution()
+def make_ga(parent_selection_type="rws",
+            crossover_type="uniform",
+            mutation_type="random",
+            mutation_num_genes=1,
+            K_tournament=3,
+            log=False):
 
-print("Best solution (binary) : {solution}".format(solution=solution))
-print("Best solution (decoded): {decoded}".format(decoded=decode_ind(solution)))
+    if mutation_type == "swap":
+        mutation_num_genes = 2
 
-real_val = global_min + (1.0 / solution_fitness) - 0.000001
-print("Function value of the best solution = {val}".format(val=real_val))
-print("Global minimum expected = {min}".format(min=global_min))
+    return pygad.GA(
+        num_generations=num_generations,
+        sol_per_pop=sol_per_pop,
+        num_parents_mating=num_parents_mating,
+        num_genes=num_genes,
+        fitness_func=fitness_func,
+        gene_type=gene_type,
+        init_range_low=init_range_low,
+        init_range_high=init_range_high,
+        gene_space=[0, 1],
+        mutation_num_genes=mutation_num_genes,
+        parent_selection_type=parent_selection_type,
+        crossover_type=crossover_type,
+        mutation_type=mutation_type,
+        keep_elitism=5,
+        K_tournament=K_tournament,
+        random_mutation_max_val=2,
+        random_mutation_min_val=0,
+        logger=logger if log else None,
+        on_generation=on_generation if log else None,
+        parallel_processing=None
+    )
 
-ga_instance.best_solutions_fitness = [global_min + (1.0 / x) - 0.000001 for x in ga_instance.best_solutions_fitness]
-ga_instance.plot_fitness()
+
+
+if __name__ == "__main__":
+    ga = make_ga(
+        parent_selection_type=parent_selection_type,
+        crossover_type=crossover_type,
+        mutation_type=mutation_type,
+        mutation_num_genes=mutation_num_genes,
+        K_tournament=3,
+        log=True
+    )
+
+    ga.run()
+
+    solution, solution_fitness, solution_idx = ga.best_solution()
+
+    print("Best solution (binary) : {solution}".format(solution=solution))
+    print("Best solution (decoded): {decoded}".format(decoded=decode_ind(solution)))
+
+    real_val = fitness_to_true_val(solution_fitness)
+    print("Function value of the best solution = {val}".format(val=real_val))
+    print("Global minimum expected = {min}".format(min=global_min))
+
+    ga.best_solutions_fitness = [fitness_to_true_val(x) for x in ga.best_solutions_fitness]
+    ga.plot_fitness()
+
+
